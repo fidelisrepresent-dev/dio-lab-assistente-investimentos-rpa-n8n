@@ -1,5 +1,4 @@
-Resumo Técnico: Workflow n8n & RPA de
-Investimentos
+Resumo Técnico: Workflow n8n & RPA de Investimentos
 1. Atualização do Script Python (RPA de Ingestão)
 O script Python foi desenvolvido para realizar a extração (scraping) da tabela de clientes, converter
 o saldo de formato textual (ex: "R$ 1.500,00") para número do tipo float e enviar todos os registros
