@@ -1,4 +1,5 @@
-Resumo Técnico: Workflow n8n & RPA de Investimentos
+Resumo Técnico: Workflow n8n & RPA de
+Investimentos
 1. Atualização do Script Python (RPA de Ingestão)
 O script Python foi desenvolvido para realizar a extração (scraping) da tabela de clientes, converter
 o saldo de formato textual (ex: "R$ 1.500,00") para número do tipo float e enviar todos os registros
@@ -36,9 +37,11 @@ except Exception as e:
 print(f"Erro ao conectar com o n8n: {e}")
 2. Arquitetura do Workflow no n8n
 Estrutura de 4 Etapas Encadeadas:
-1. Webhook Node: Recebe o payload JSON contendo a lista de clientes enviada pelo script Python.
-2. Code Node (Desmembrar Clientes / Webhook Data): Processa os itens recebidos e transforma em execuções individuais.
-Documento Técnico - Workflow n8n Página 1 
+1. Webhook Node: Recebe o payload JSON contendo a lista de clientes enviada pelo script
+Python.
+2. Code Node (Desmembrar Clientes / Webhook Data): Processa os itens recebidos e
+transforma em execuções individuais.
+Documento Técnico - Workflow n8n Página 1
 3. Código do Nó: Analista de Perfil do Investidor
 Este nó em JavaScript realiza o processamento do arquivo CSV recebido via HTTP Request e executa
 o cruzamento direto com a lista de clientes vinda do Webhook, classificando os produtos elegíveis
@@ -86,6 +89,7 @@ produtos_elegiveis: produtosRecomendados
 };
 });
 4. Estruturação das Mensagens de Abordagem por Perfil
+Documento Técnico - Workflow n8n Página 2
 5. Prompt Principal para o Nó de IA (Geração de E-mail HTML)
 Prompt do Nó Google Gemini (Message a Model):
 Você é um Assessor de Investimentos sênior, especialista em comunicação por e-mail com
@@ -119,13 +123,22 @@ destacado informando que todo e qualquer investimento envolve riscos, inclusive 
 possibilidade de perda do capital investido, e que rentabilidade passada não é garantia
 de rentabilidade futura.
 Retorne APENAS o código HTML do e-mail pronto para ser disparado.
-  
 6. Resolução de Erros de Configuração e Conectividade
 Erro / Problema Causa Identificada Solução Aplicada
 Referenced node doesn't exist
-Referência incorreta a um nó inexistente (Desmembrar Clientes).
+Referência
+incorreta a um nó
+inexistente
+(Desmembrar
+Clientes).
 Ajustado o código para referenciar
 diretamente o nó $('Webhook').all().
-Bad request - single turn requests end with user role
-O campo Role nas configurações do nó do Gemini estava definido como Model.
-Alterado o campo Role para User (ou deixado em branco).
+Bad request - single turn requests end
+with user role
+O campo Role nas
+configurações do
+nó do Gemini
+estava definido
+como Model.
+Alterado o campo Role para User (ou
+deixado em branco).
