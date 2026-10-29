@@ -1,0 +1,287 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cliente",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bb5ccb11-f7b4-4428-9eca-22ef5e51bd17",
+      "name": "Webhook",
+      "webhookId": "7b581519-add9-4604-9e7a-6eff0e605d53"
+    },
+    {
+      "parameters": {
+        "url": "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/data.csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e9c86a52-c49b-4eb8-a4cd-3df14ef7cac4",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Este nó recebe os dados consolidados do Analista de Perfil e monta os textos de e-mail\nconst itens = $input.all();\nconst resultados = [];\n\nfor (const item of itens) {\n  const dados = item.json;\n  const nome = dados.nome || \"Cliente\";\n  const email = dados.email || \"Sem e-mail\";\n  const saldo = dados.saldo || \"R$ 0,00\";\n  const perfil = dados.perfil || \"Não definido\";\n  const produtos = dados.produtos_elegiveis || [];\n\n  // Seleciona até 3 produtos recomendados\n  const topTresProdutos = produtos.slice(0, 3);\n\n  // Monta a estrutura da mensagem com as recomendações de investimento\n  let corpoMensagem = `Olá, equipe!\\n\\nSegue a análise de recomendação do cliente:\\n`;\n  corpoMensagem += `• Nome: ${nome}\\n`;\n  corpoMensagem += `• E-mail: ${email}\\n`;\n  corpoMensagem += `• Saldo Disponível: ${saldo}\\n`;\n  corpoMensagem += `• Perfil do Investidor: ${perfil}\\n\\n`;\n\n  if (topTresProdutos.length > 0) {\n    corpoMensagem += `Opções recomendadas (Até 3 produtos compatíveis):\\n`;\n    topTresProdutos.forEach((prod, index) => {\n      corpoMensagem += `${index + 1}. Produto: ${prod.produto} | Mínimo: R$ ${prod.minimo} | Rentabilidade: ${prod.rentabilidade}\\n`;\n    });\n  } else {\n    corpoMensagem += `Não foram encontrados produtos compatíveis com o saldo de investimento mínimo e perfil deste cliente no momento.\\n`;\n  }\n\n  resultados.push({\n    json: {\n      destinatario_equipe: \"equipe-vendas@suaempresa.com\",\n      assunto_email: `Recomendações de Investimento - ${nome} (${perfil})`,\n      conteudo_mensagem: corpoMensagem,\n      cliente_nome: nome,\n      cliente_email: email,\n      cliente_saldo: saldo,\n      cliente_perfil: perfil\n    }\n  });\n}\n\nreturn resultados;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "488fb92e-6830-4cd8-ba85-76fc28da0e62",
+      "name": "Gerar Mensagem Personalizada"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Processa o CSV vindo do HTTP Request (dados de investimentos)\nconst csvData = $input.first().json.data || '';\nconst linhasCsv = csvData.trim().split('\\n');\nlinhasCsv.shift(); // Remove o cabeçalho\n\nconst matrizInvestimentos = linhasCsv.map(linha => {\n  const colunas = linha.split(',');\n  return {\n    perfil: colunas[0]?.trim(),\n    produto: colunas[1]?.trim(),\n    minimo: Number(colunas[2]?.trim()) || 0,\n    rentabilidade: colunas[3]?.trim()\n  };\n});\n\n// 2. Resgata a lista de clientes que veio dentro do payload único do Webhook\nconst webhookData = $('Webhook').first().json.body;\nconst listaClientes = webhookData.clientes || [];\n\n// 3. Itera sobre cada cliente e gera um item de output para cada um deles\nreturn listaClientes.map(cliente => {\n  const nome = cliente.nome || 'Cliente';\n  const email = cliente.email || '';\n  const perfil = cliente.perfil || 'Conservador';\n\n  // Tratamento do saldo\n  let saldoBruto = cliente.saldo;\n  let saldoLimpo = 0;\n\n  if (typeof saldoBruto === 'number') {\n    saldoLimpo = saldoBruto;\n  } else if (typeof saldoBruto === 'string') {\n    saldoLimpo = Number(saldoBruto.replace('R$', '').replace(/\\\\./g, '').replace(',', '.').trim()) || 0;\n  }\n\n  // Filtra as opções de investimento compatíveis com o perfil e saldo do cliente\n  const produtosRecomendados = matrizInvestimentos.filter(opcao => \n    opcao.perfil.toLowerCase() === perfil.toLowerCase() && saldoLimpo >= opcao.minimo\n  );\n\n  return {\n    json: {\n      nome: nome,\n      email: email,\n      saldo: saldoBruto,\n      perfil: perfil,\n      produtos_elegiveis: produtosRecomendados\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "1344cdd3-add6-4caa-8da7-7f5295b75501",
+      "name": "Analista de Perfil do Investidor"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um Assessor de Investimentos sênior, especialista em comunicação por e-mail com clientes de alta conversão e clareza. \n\nAbaixo estão os dados do cliente, seu perfil de investidor e as 3 opções de estratégias geradas pelo sistema para este cliente específico:\n\n- Nome do Cliente: {{ $json.cliente_nome }}\n- E-mail: {{ $json.cliente_email }}\n- Saldo Disponível: {{ $json.cliente_saldo }}\n- Perfil de Risco: {{ $json.cliente_perfil }}\n\nSua tarefa é redigir um e-mail comercial altamente profissional, persuasivo e elegante para o cliente, estruturando o conteúdo em HTML tabulado e limpo (utilizando tags como <table>, <tr>, <td>, <p>, <strong>, etc.), com quebras de linha adequadas e alinhado às boas práticas de e-mail marketing.\n\nDIRETRIZES OBRIGATÓRIAS:\n1. Formatação HTML: Utilize uma estrutura de tabela limpa e responsiva para organizar o layout (cabeçalho, saudação, corpo e rodapé).\n2. Tom da Mensagem: Consultivo, empático, corporativo e focado em planejamento financeiro.\n3. Restrição Regulatória Absoluta: NUNCA indique, recomende ou cite a compra ou venda de ações específicas de empresas (ex: evite citar tickers ou nomes de empresas como PETR4, VALE3, etc.). Foque em classes de ativos genéricas (ex: ações pagadoras de dividendos, fundos imobiliários, renda fixa, etc.).\n4. Personalização: Utilize o nome do cliente, o saldo atual e o perfil de risco informados nos dados acima.\n5. Rodapé de Alerta de Risco: No final do e-mail, inclua obrigatoriamente um rodapé destacado informando que todo e qualquer investimento envolve riscos, inclusive a possibilidade de perda do capital investido, e que rentabilidade passada não é garantia de rentabilidade futura.\n\nRetorne APENAS o código HTML do e-mail pronto para ser disparado.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        816,
+        0
+      ],
+      "id": "9d0a93f5-c858-466d-bc77-f0b154f59430",
+      "name": "AI Agent",
+      "notesInFlow": false,
+      "executeOnce": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        192
+      ],
+      "id": "db0059ab-50a6-47b9-85dc-13c411857ca8",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "EgNpjd2VmthXhZZ9",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Gerar Mensagem Personalizada').item.json.cliente_email }}",
+        "subject": "={{ $('Gerar Mensagem Personalizada').item.json.assunto_email }}",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "80cb209b-be0b-423d-a286-a8d7b9df6f1e",
+      "name": "Send a message",
+      "webhookId": "50d22527-a359-4e09-8ff5-b6792469a35b"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "public-colony-chant.ngrok-free.dev",
+            "user-agent": "python-requests/2.32.4",
+            "content-length": "1047",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "content-type": "application/json",
+            "x-forwarded-for": "34.186.110.106",
+            "x-forwarded-host": "public-colony-chant.ngrok-free.dev",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "clientes": [
+              {
+                "nome": "Ana Silva",
+                "email": "ana@email.com",
+                "saldo": "R$ 12.500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Bruno Lima",
+                "email": "bruno@email.com",
+                "saldo": "R$ 3.200,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Carla Souza",
+                "email": "carla@email.com",
+                "saldo": "R$ 28.900,00",
+                "perfil": "Arrojado"
+              },
+              {
+                "nome": "Daniel Oliveira",
+                "email": "daniel@email.com",
+                "saldo": "R$ 850,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Elena Rodrigues",
+                "email": "elena@email.com",
+                "saldo": "R$ 45.000,00",
+                "perfil": "Arrojado"
+              },
+              {
+                "nome": "Felipe Santos",
+                "email": "felipe@email.com",
+                "saldo": "R$ 7.800,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Gabriela Costa",
+                "email": "gabriela@email.com",
+                "saldo": "R$ 1.500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "Henrique Alves",
+                "email": "henrique@email.com",
+                "saldo": "R$ 22.300,00",
+                "perfil": "Moderado"
+              },
+              {
+                "nome": "Isabela Martins",
+                "email": "isabela@email.com",
+                "saldo": "R$ 500,00",
+                "perfil": "Conservador"
+              },
+              {
+                "nome": "João Pereira",
+                "email": "joao@email.com",
+                "saldo": "R$ 15.000,00",
+                "perfil": "Arrojado"
+              }
+            ]
+          },
+          "webhookUrl": "http://localhost:5678/webhook-test/cliente",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Analista de Perfil do Investidor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analista de Perfil do Investidor": {
+      "main": [
+        [
+          {
+            "node": "Gerar Mensagem Personalizada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Mensagem Personalizada": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d035f8c8-a1fb-4d5e-852e-c9db3c007ece",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fb2bf59ed77dd6c0d2680c755c09da885e247dd87e8ecdf790ed6607541f7750"
+  },
+  "nodeGroups": [],
+  "id": "L8Rak9E1zYxFauR8",
+  "tags": []
+}
