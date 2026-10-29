@@ -105,9 +105,9 @@ geradas pelo sistema para este cliente específico:
 2. {{ $json.opcoes_mensagem_email.opcao_2 }}
 3. {{ $json.opcoes_mensagem_email.opcao_3 }}
 Sua tarefa é redigir um e-mail comercial altamente profissional, persuasivo e elegante
-para o cliente, estruturando o conteúdo em HTML tabulado e limpo (utilizando tags como
-<table>, <tr>, <td>, <p>, <strong>, etc.), com quebras de linha adequadas e alinhado às
+para o cliente, estruturando o conteúdo em HTML tabulado e limpo com quebras de linha adequadas e alinhado às
 boas práticas de e-mail marketing.
+
 DIRETRIZES OBRIGATÓRIAS:
 1. Formatação HTML: Utilize uma estrutura de tabela limpa e responsiva para organizar o
 layout (cabeçalho, saudação, corpo e rodapé).
@@ -123,22 +123,16 @@ destacado informando que todo e qualquer investimento envolve riscos, inclusive 
 possibilidade de perda do capital investido, e que rentabilidade passada não é garantia
 de rentabilidade futura.
 Retorne APENAS o código HTML do e-mail pronto para ser disparado.
-6. Resolução de Erros de Configuração e Conectividade
+
+7. Resolução de Erros de Configuração e Conectividade
+
 Erro / Problema Causa Identificada Solução Aplicada
-Referenced node doesn't exist
-Referência
-incorreta a um nó
-inexistente
-(Desmembrar
-Clientes).
-Ajustado o código para referenciar
-diretamente o nó $('Webhook').all().
-Bad request - single turn requests end
-with user role
-O campo Role nas
-configurações do
-nó do Gemini
-estava definido
-como Model.
-Alterado o campo Role para User (ou
-deixado em branco).
+1 - Referenced node doesn't exist
+Referência incorreta a um nó inexistente
+
+2 - Desmembrar Clientes.
+Ajustado o código para referenciar diretamente o nó $('Webhook').all().
+
+3 - Bad request - single turn requests end with user role
+O campo Role nas configurações do nó do Gemini estava definido como Model.
+Alterado o campo Role para User (ou deixado em branco).
