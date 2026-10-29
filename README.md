@@ -126,7 +126,7 @@ Retorne APENAS o código HTML do e-mail pronto para ser disparado.
 
 7. Resolução de Erros de Configuração e Conectividade
 
-Erro / Problema Causa Identificada Solução Aplicada
+Erro / Problema / Causa Identificada / Solução Aplicada
 
 1 - Referenced node doesn't exist
 Referência incorreta a um nó inexistente
